@@ -34,13 +34,45 @@ A modern web application for exploring and filtering AI models available through
 - Responsive design
 - Modern animations
 
-## 🎯 Recent Updates
+## 🚀 Getting Started
 
-- Streamlined interface with improved filter organization
-- Enhanced visual design with glass-morphism effects
-- Improved table styling and readability
-- Better filter controls with contained groups
-- Optimized mobile responsiveness
+### Local Development
+1. Clone the repository
+2. Open `index.html` in a modern web browser
+3. Start exploring AI models!
+
+### Deploying to GitHub Pages
+
+1. Create a GitHub repository
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit"
+   git branch -M main
+   git remote add origin https://github.com/yourusername/your-repo-name.git
+   git push -u origin main
+   ```
+
+2. Deploy to GitHub Pages
+   - Go to your repository on GitHub
+   - Click on "Settings"
+   - Scroll down to "GitHub Pages" section
+   - Under "Source", select "main" branch
+   - Click "Save"
+   - Your site will be published at `https://yourusername.github.io/your-repo-name`
+
+   Alternatively, you can use GitHub CLI:
+   ```bash
+   # Enable GitHub Pages in your repository settings
+   gh repo edit --enable-pages
+   # Set the publishing source to the main branch
+   gh repo edit --default-branch main
+   ```
+
+3. Verify Deployment
+   - Wait a few minutes for GitHub to build and deploy your site
+   - Visit `https://yourusername.github.io/your-repo-name`
+   - Your OpenRouter Models Explorer should now be live!
 
 ## 🔧 Technologies
 
@@ -49,12 +81,6 @@ A modern web application for exploring and filtering AI models available through
 - JavaScript (Alpine.js)
 - Tailwind CSS
 - Font Awesome icons
-
-## 🚀 Getting Started
-
-1. Clone the repository
-2. Open `index.html` in a modern web browser
-3. Start exploring AI models!
 
 ## 📱 Browser Support
 
