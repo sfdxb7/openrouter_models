@@ -1,7 +1,9 @@
 function modelExplorer() {
     return {
-        models: [],
+        models: [], 
         cachedModels: null,
+        providerFilterQuery: '',
+        modalityFilterQuery: '',
         filters: {
             providers: [],
             modalities: [],
@@ -18,9 +20,9 @@ function modelExplorer() {
         searchQuery: '',
         nameFilterQuery: '',
         showColumns: false,
-        providerFilterQuery: '',
-        modalityFilterQuery: '',
-        pricingFilterQuery: '',
+        selectedProviders: [],
+        selectedModalities: [],
+        selectedPricingTypes: [],
         contextLengthFilter: null,
         columns: [
             { 
@@ -199,32 +201,63 @@ function modelExplorer() {
         },
         
         get filteredModels() {
-            return this.models.filter(model => {
+            console.log('Applying filters:', {
+                search: this.searchQuery,
+                provider: this.providerFilterQuery,
+                modality: this.modalityFilterQuery,
+                pricing: this.pricingFilterQuery,
+                contextLength: this.contextLengthFilter
+            });
+
+            const filtered = this.models.filter(model => {
                 const matchesSearch = !this.searchQuery ||
                     (model.name && model.name.toLowerCase().includes(this.searchQuery.toLowerCase())) ||
                     (model.provider && model.provider.toLowerCase().includes(this.searchQuery.toLowerCase()));
                 
-                const matchesProvider = !this.providerFilterQuery || model.provider === this.providerFilterQuery;
+                const matchesProvider = this.selectedProviders.length === 0 || 
+                    this.selectedProviders.includes(model.provider);
                 
-                const matchesModality = !this.modalityFilterQuery || model.modality.includes(this.modalityFilterQuery);
+                const matchesModality = this.selectedModalities.length === 0 || 
+                    this.selectedModalities.some(modality => 
+                        model.modality.toLowerCase().includes(modality.toLowerCase())
+                    );
                 
-                const matchesPricing = !this.pricingFilterQuery || 
-                    (this.pricingFilterQuery === 'free' && this.isFreeModel(model)) || 
-                    (this.pricingFilterQuery === 'paid' && !this.isFreeModel(model));
+                const matchesPricing = this.selectedPricingTypes.length === 0 || 
+                    (this.selectedPricingTypes.includes('free') && this.isFreeModel(model)) || 
+                    (this.selectedPricingTypes.includes('paid') && !this.isFreeModel(model));
                 
                 const matchesContextLength = !this.contextLengthFilter ||
                     model.contextLength >= this.contextLengthFilter;
                 
-                return matchesSearch && matchesProvider && matchesModality && matchesPricing && matchesContextLength;
+                const result = matchesSearch && matchesProvider && matchesModality && matchesPricing && matchesContextLength;
+                
+                if (result) {
+                    console.log('Model matches filters:', model.name);
+                }
+                
+                return result;
             });
+
+            console.log('Filtered models count:', filtered.length);
+            return filtered;
+        },
+
+        updateFilters() {
+            console.log('Filters updated, refreshing table...');
+            // Force reactivity by creating a new array
+            this.models = [...this.models];
         },
         
         get availableProviders() {
-            return [...new Set(this.models.map(model => model.provider))].sort();
+            const providers = [...new Set(this.models.map(model => model.provider))].sort();
+            console.log('Available providers:', providers);
+            return providers;
         },
         
         get availableModalities() {
-            return [...new Set(this.models.flatMap(model => model.modality.split('+').map(m => m.split('->')[0])))].sort();
+            const modalities = [...new Set(this.models.flatMap(model => model.modality.split('+').map(m => m.split('->')[0])))].sort();
+            console.log('Available modalities:', modalities);
+            return modalities;
         },
         
         getModalityIcons(modality) {
