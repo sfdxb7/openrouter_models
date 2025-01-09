@@ -200,47 +200,75 @@ function modelExplorer() {
             }, 3000);
         },
         
-        get filteredModels() {
-            console.log('Applying filters:', {
-                search: this.searchQuery,
-                provider: this.providerFilterQuery,
-                modality: this.modalityFilterQuery,
-                pricing: this.pricingFilterQuery,
-                contextLength: this.contextLengthFilter
-            });
+get filteredModels() {
+    console.log('Applying filters:', {
+        search: this.searchQuery,
+        provider: this.providerFilterQuery,
+        modality: this.modalityFilterQuery,
+        pricing: this.pricingFilterQuery,
+        contextLength: this.contextLengthFilter
+    });
 
-            const filtered = this.models.filter(model => {
-                const matchesSearch = !this.searchQuery ||
-                    (model.name && model.name.toLowerCase().includes(this.searchQuery.toLowerCase())) ||
-                    (model.provider && model.provider.toLowerCase().includes(this.searchQuery.toLowerCase()));
-                
-                const matchesProvider = this.selectedProviders.length === 0 || 
-                    this.selectedProviders.includes(model.provider);
-                
-                const matchesModality = this.selectedModalities.length === 0 || 
-                    this.selectedModalities.some(modality => 
-                        model.modality.toLowerCase().includes(modality.toLowerCase())
-                    );
-                
-                const matchesPricing = this.selectedPricingTypes.length === 0 || 
-                    (this.selectedPricingTypes.includes('free') && this.isFreeModel(model)) || 
-                    (this.selectedPricingTypes.includes('paid') && !this.isFreeModel(model));
-                
-                const matchesContextLength = !this.contextLengthFilter ||
-                    model.contextLength >= this.contextLengthFilter;
-                
-                const result = matchesSearch && matchesProvider && matchesModality && matchesPricing && matchesContextLength;
-                
-                if (result) {
-                    console.log('Model matches filters:', model.name);
-                }
-                
-                return result;
-            });
+    const filtered = this.models.filter(model => {
+        const matchesSearch = !this.searchQuery ||
+            (model.name && model.name.toLowerCase().includes(this.searchQuery.toLowerCase())) ||
+            (model.provider && model.provider.toLowerCase().includes(this.searchQuery.toLowerCase()));
+        
+        const matchesProvider = this.selectedProviders.length === 0 || 
+            this.selectedProviders.some(selectedProvider => 
+                model.provider.toLowerCase().includes(selectedProvider.toLowerCase())
+            );
+        
+        const matchesModality = this.selectedModalities.length === 0 || 
+            this.selectedModalities.some(modality => 
+                model.modality.toLowerCase().includes(modality.toLowerCase())
+            );
+        
+        const matchesPricing = this.selectedPricingTypes.length === 0 || 
+            (this.selectedPricingTypes.includes('free') && this.isFreeModel(model)) || 
+            (this.selectedPricingTypes.includes('paid') && !this.isFreeModel(model));
+        
+        const matchesContextLength = !this.contextLengthFilter ||
+            model.contextLength >= this.contextLengthFilter;
+        
+        const result = matchesSearch && matchesProvider && matchesModality && matchesPricing && matchesContextLength;
+        
+        if (result) {
+            console.log('Model matches filters:', model.name);
+        }
+        
+        return result;
+    });
 
-            console.log('Filtered models count:', filtered.length);
-            return filtered;
-        },
+    console.log('Filtered models count:', filtered.length);
+    return filtered;
+},
+
+resetFilters() {
+    this.searchQuery = '';
+    this.selectedProviders = [];
+    this.selectedModalities = [];
+    this.selectedPricingTypes = [];
+    this.contextLengthFilter = null;
+},
+
+getProviderIcon(provider) {
+    const providerIcons = {
+        'meta-llama': 'fab fa-facebook',
+        'openai': 'fab fa-openai',
+        'anthropic': 'fas fa-brain',
+        'google': 'fab fa-google',
+        'mistral': 'fas fa-wind',
+        'cohere': 'fas fa-cubes'
+    };
+    
+    const lowercaseProvider = provider.toLowerCase();
+    const matchedIcon = Object.keys(providerIcons).find(key => 
+        lowercaseProvider.includes(key)
+    );
+    
+    return matchedIcon ? providerIcons[matchedIcon] : 'fas fa-robot';
+},
 
         updateFilters() {
             console.log('Filters updated, refreshing table...');
@@ -274,42 +302,44 @@ function modelExplorer() {
             });
         },
         
-        formatPricing(pricing) {
-            const icons = {
-                prompt: 'fas fa-comment',
-                completion: 'fas fa-arrow-right',
-                image: 'fas fa-image',
-                request: 'fas fa-bolt'
-            };
+formatPricing(pricing, modelName) {
+    const icons = {
+        prompt: 'fas fa-comment',
+        completion: 'fas fa-arrow-right',
+        image: 'fas fa-image',
+        request: 'fas fa-bolt'
+    };
+    
+    const isFreeModel = Object.values(pricing).every(val => val === '0' || val === 'free') || 
+                        modelName.toLowerCase().includes('free');
+    
+    if (isFreeModel) {
+        return `
+            <div class="flex items-center space-x-1">
+                <i class="fas fa-gift text-green-500"></i>
+                <span class="text-sm">Free</span>
+                <span class="free-icon">FREE</span>
+            </div>
+        `;
+    }
             
-            const isFreeModel = Object.values(pricing).every(val => val === '0' || val === 'free');
+    return Object.entries(pricing)
+        .filter(([_, value]) => value !== '0' && value !== 'free')
+        .map(([type, value]) => {
+            const numericValue = parseFloat(value);
+            if (isNaN(numericValue)) return '';
             
-            if (isFreeModel) {
-                return `
-                    <div class="flex items-center space-x-1">
-                        <i class="fas fa-gift text-green-500"></i>
-                        <span class="text-sm">Free</span>
-                    </div>
-                `;
-            }
+            const costPerMillion = numericValue * 1000000;
+            const formattedValue = `$${costPerMillion.toFixed(2)}/M`;
             
-            return Object.entries(pricing)
-                .filter(([_, value]) => value !== '0' && value !== 'free')
-                .map(([type, value]) => {
-                    const numericValue = parseFloat(value);
-                    if (isNaN(numericValue)) return '';
-                    
-                    const costPerMillion = numericValue * 1000000;
-                    const formattedValue = `$${costPerMillion.toFixed(2)}/M`;
-                    
-                    return `
-                        <div class="flex items-center space-x-1">
-                            <i class="${icons[type]} text-sm"></i>
-                            <span class="text-sm">${formattedValue}</span>
-                        </div>
-                    `;
-                }).join('') || 'N/A';
-        },
+            return `
+                <div class="flex items-center space-x-1">
+                    <i class="${icons[type]} text-sm"></i>
+                    <span class="text-sm">${formattedValue}</span>
+                </div>
+            `;
+        }).join('') || 'N/A';
+},
         
         copyModelId(id) {
             navigator.clipboard.writeText(id)
@@ -342,9 +372,10 @@ function modelExplorer() {
             });
         },
         
-        isFreeModel(model) {
-            return model.name.toLowerCase().includes('free') || 
-                   Object.values(model.pricing).some(val => val === 'free');
-        }
+isFreeModel(model) {
+    return model.name.toLowerCase().includes('free') || 
+           model.name.toLowerCase().includes('open source') ||
+           Object.values(model.pricing).every(val => val === '0' || val === 'free');
+}
     }
 }

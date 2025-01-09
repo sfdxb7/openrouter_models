@@ -1,71 +1,74 @@
-# 🚀 OpenRouter Model Explorer
+# 🌐 OpenRouter Models Explorer
 
-## 🌟 Project Overview
-A powerful tool to explore and analyze AI models available on OpenRouter, with advanced filtering and sorting capabilities.
+A modern web application for exploring and filtering AI models available through OpenRouter.
 
-## 🎯 Key Features
+![OpenRouter Models Explorer Interface](Screenshot%202025-01-09%20213513.png)
 
-- 🔍 **Advanced Search**  
-  Search models by name, provider, or capabilities
+## ✨ Features
 
-- 🎚️ **Smart Filters**  
-  Filter by:
-  - 🏢 Provider
-  - 🎨 Modality (text, image, audio, video)
-  - 💰 Pricing (free/paid)
-  - 📏 Context Length
+### 🔍 Advanced Filtering
+- Provider-based filtering
+- Modality selection (text, image, etc.)
+- Pricing type filtering (Free/Paid)
+- Context length filtering
+- Comprehensive search functionality
 
-- 📊 **Interactive Table**  
-  Sort and compare models with:
-  - 🔼🔽 Sortable columns
-  - 🎨 Modality icons
-  - 💵 Pricing breakdowns
+### 💫 Modern UI/UX
+- Professional purple and pink gradient theme
+- Glass-morphism design elements
+- Responsive layout
+- Dark mode optimized
+- Clean, organized filter controls
 
-- ⚡ **Real-time Data**  
-  - 🕒 Auto-refreshing model data
-  - 💾 Local caching for offline use
+### 📊 Data Display
+- Provider icons for quick recognition
+- Clear pricing information
+- Free model indicators
+- Context length visualization
+- Sortable columns
 
-## 🛠️ Installation & Usage
+### 🛠️ Technical Features
+- Real-time filtering
+- Local storage caching
+- Error handling with retries
+- Responsive design
+- Modern animations
 
-1. **Clone the repository**  
-   ```bash
-   git clone https://github.com/yourusername/openrouter_models.git
-   ```
+## 🎯 Recent Updates
 
-2. **Navigate to project directory**  
-   ```bash
-   cd openrouter_models
-   ```
+- Streamlined interface with improved filter organization
+- Enhanced visual design with glass-morphism effects
+- Improved table styling and readability
+- Better filter controls with contained groups
+- Optimized mobile responsiveness
 
-3. **Launch the application**  
-   Start a local server:
-   ```bash
-   python -m http.server 8000
-   ```
-   
-   Then open in your browser:
-   ```bash
-   http://localhost:8000
-   ```
+## 🔧 Technologies
 
-## 🧰 Technical Details
+- HTML5
+- CSS3 with modern features
+- JavaScript (Alpine.js)
+- Tailwind CSS
+- Font Awesome icons
 
-- 🛠️ Built with:
-  - 🖥️ Alpine.js for reactive UI
-  - 🎨 Tailwind CSS for styling
-  - 🌐 OpenRouter API for data
+## 🚀 Getting Started
 
-- 🚦 Status Indicators:
-  - 🟢 Live data
-  - 🟡 Loading
-  - 🔴 Connection issues
+1. Clone the repository
+2. Open `index.html` in a modern web browser
+3. Start exploring AI models!
 
-## 🙏 Acknowledgements
+## 📱 Browser Support
 
-This project was developed using:
-- 🤖 [Cline](https://docs.claude.ai/claude-desktop)
-- 🧠 deepseek 3 model
-- 💡 OpenRouter API
+Optimized for modern browsers with support for:
+- CSS Grid
+- Flexbox
+- CSS Variables
+- Backdrop Filter
+- Modern JavaScript
 
-## 📜 License
-MIT License - Free to use and modify
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📄 License
+
+[MIT License](LICENSE)
