@@ -1,7 +1,6 @@
 function modelExplorer() {
     return {
         models: [],
-        tooltipState: null,
         searchQuery: '',
         selectedProviders: [],
         selectedModalities: [],
@@ -37,82 +36,6 @@ function modelExplorer() {
             
             // Always try to fetch fresh data
             this.fetchData();
-            
-            // Initialize tooltip state
-            this.tooltipState = { model: null };
-            this.initTooltips();
-        },
-
-        initTooltips() {
-            // Hide details panel when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('.details-panel') && !e.target.closest('tr')) {
-                    this.hideTooltip();
-                }
-            });
-
-            // Hide details panel when pressing escape
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    this.hideTooltip();
-                }
-            });
-        },
-
-        showTooltip(modelId) {
-            try {
-                console.log('showTooltip called with modelId:', modelId);
-                if (!modelId) {
-                    console.warn('No modelId provided to showTooltip');
-                    return;
-                }
-
-                const model = this.models.find(m => m.id === modelId);
-                console.log('Found model:', model);
-
-                if (!model) {
-                    console.warn('No model found with id:', modelId);
-                    return;
-                }
-
-                // Check if we're clicking the same model
-                const isSameModel = this.tooltipState && 
-                                  this.tooltipState.model && 
-                                  this.tooltipState.model.id === model.id;
-
-                if (isSameModel) {
-                    console.log('Same model clicked, hiding tooltip');
-                    this.hideTooltip();
-                } else {
-                    console.log('Setting new model in tooltipState');
-                    // Create a new object to ensure reactivity
-                    this.tooltipState = {
-                        model: {
-                            ...model,
-                            createdAt: model.createdAt || new Date().toLocaleDateString(),
-                            description: model.description || 'No description available',
-                            limitations: model.limitations || []
-                        }
-                    };
-                    console.log('Current tooltipState:', this.tooltipState);
-                }
-            } catch (error) {
-                console.error('Error in showTooltip:', error);
-                this.hideTooltip();
-            }
-        },
-
-        hideTooltip() {
-            try {
-                console.log('hideTooltip called');
-                // Create a new object to ensure reactivity
-                this.tooltipState = { model: null };
-                console.log('Current tooltipState:', this.tooltipState);
-            } catch (error) {
-                console.error('Error in hideTooltip:', error);
-                // Force reset the state
-                this.tooltipState = null;
-            }
         },
 
         fetchData() {
