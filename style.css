@@ -164,3 +164,79 @@ input[type="text"]:focus {
 .animate-fade-in {
     animation: fadeIn 0.5s ease-out;
 }
+
+/* Details Panel Styles */
+.details-panel {
+    background: rgba(17, 24, 39, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(8px);
+    transition: all 0.2s ease-out;
+    z-index: 50;
+    position: sticky;
+    top: 1rem;
+}
+
+/* Ensure the panel is visible when it has content */
+.details-panel:not(:empty) {
+    display: block !important;
+}
+
+.details-panel[x-cloak] {
+    display: none;
+}
+
+.details-panel h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.details-panel .section {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1rem 0;
+}
+
+.details-panel .section:last-child {
+    border-bottom: none;
+}
+
+.details-panel .section h4 {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 0.5rem;
+}
+
+.details-panel .section p {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+}
+
+.details-panel ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.details-panel ul li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 0.5rem;
+}
+
+.details-panel ul li:last-child {
+    margin-bottom: 0;
+}
+
+.details-panel ul li i {
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 0.25rem;
+}

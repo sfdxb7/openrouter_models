@@ -1,58 +1,23 @@
 function modelExplorer() {
     return {
-        models: [], 
-        cachedModels: null,
-        providerFilterQuery: '',
-        modalityFilterQuery: '',
-        filters: {
-            providers: [],
-            modalities: [],
-            pricing: []
-        },
-        statusLight: 'gray',
-        sortField: 'name',
-        sortDirection: 'asc',
-        showProviderFilters: false,
-        showNameFilters: false,
-        showModalityFilters: false,
-        showPricingFilters: false,
-        showContextLengthFilters: false,
+        models: [],
+        tooltipState: null,
         searchQuery: '',
-        nameFilterQuery: '',
-        showColumns: false,
         selectedProviders: [],
         selectedModalities: [],
         selectedPricingTypes: [],
         contextLengthFilter: null,
+        statusLight: 'gray',
+        sortField: 'name',
+        sortDirection: 'asc',
         columns: [
-            { 
-                id: 'provider', 
-                label: 'Provider', 
-                description: 'The service or organization providing the AI model'
-            },
-            { 
-                id: 'name', 
-                label: 'Model Name', 
-                description: 'Unique identifier and name of the AI model'
-            },
-            { 
-                id: 'modality', 
-                label: 'Modality', 
-                description: 'Input and output capabilities of the model (text, image, etc.)'
-            },
-            { 
-                id: 'pricing', 
-                label: 'Pricing', 
-                description: 'Cost structure for using the model (per token/request)'
-            },
-            { 
-                id: 'contextLength', 
-                label: 'Context Length', 
-                description: 'Maximum number of tokens the model can process in a single request'
-            }
+            { id: 'provider', label: 'Provider', description: 'The service or organization providing the AI model' },
+            { id: 'name', label: 'Model Name', description: 'Unique identifier and name of the AI model' },
+            { id: 'modality', label: 'Modality', description: 'Input and output capabilities of the model (text, image, etc.)' },
+            { id: 'pricing', label: 'Pricing', description: 'Cost structure for using the model (per token/request)' },
+            { id: 'contextLength', label: 'Context Length', description: 'Maximum number of tokens the model can process in a single request' }
         ],
-        visibleColumns: ['provider', 'name', 'modality', 'pricing', 'contextLength'],
-        
+
         init() {
             // Check for cached models
             const cachedData = localStorage.getItem('openRouterModels');
@@ -73,221 +38,173 @@ function modelExplorer() {
             // Always try to fetch fresh data
             this.fetchData();
             
-            // Dark mode persistence
-            if (localStorage.getItem('darkMode') === 'true') {
-                document.documentElement.classList.add('dark');
-                this.$root.darkMode = true;
+            // Initialize tooltip state
+            this.tooltipState = { model: null };
+            this.initTooltips();
+        },
+
+        initTooltips() {
+            // Hide details panel when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.details-panel') && !e.target.closest('tr')) {
+                    this.hideTooltip();
+                }
+            });
+
+            // Hide details panel when pressing escape
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    this.hideTooltip();
+                }
+            });
+        },
+
+        showTooltip(modelId) {
+            try {
+                console.log('showTooltip called with modelId:', modelId);
+                if (!modelId) {
+                    console.warn('No modelId provided to showTooltip');
+                    return;
+                }
+
+                const model = this.models.find(m => m.id === modelId);
+                console.log('Found model:', model);
+
+                if (!model) {
+                    console.warn('No model found with id:', modelId);
+                    return;
+                }
+
+                // Check if we're clicking the same model
+                const isSameModel = this.tooltipState && 
+                                  this.tooltipState.model && 
+                                  this.tooltipState.model.id === model.id;
+
+                if (isSameModel) {
+                    console.log('Same model clicked, hiding tooltip');
+                    this.hideTooltip();
+                } else {
+                    console.log('Setting new model in tooltipState');
+                    // Create a new object to ensure reactivity
+                    this.tooltipState = {
+                        model: {
+                            ...model,
+                            createdAt: model.createdAt || new Date().toLocaleDateString(),
+                            description: model.description || 'No description available',
+                            limitations: model.limitations || []
+                        }
+                    };
+                    console.log('Current tooltipState:', this.tooltipState);
+                }
+            } catch (error) {
+                console.error('Error in showTooltip:', error);
+                this.hideTooltip();
             }
         },
-        
+
+        hideTooltip() {
+            try {
+                console.log('hideTooltip called');
+                // Create a new object to ensure reactivity
+                this.tooltipState = { model: null };
+                console.log('Current tooltipState:', this.tooltipState);
+            } catch (error) {
+                console.error('Error in hideTooltip:', error);
+                // Force reset the state
+                this.tooltipState = null;
+            }
+        },
+
         fetchData() {
             this.statusLight = 'yellow';
-            let retries = 3;
-            const fetchWithRetry = async () => {
-                try {
-                    const response = await fetch('https://openrouter.ai/api/v1/models', {
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    
-                    return response.json();
-                } catch (error) {
-                    if (retries > 0) {
-                        retries--;
-                        console.log(`Retrying... attempts left: ${retries}`);
-                        await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries)));
-                        return fetchWithRetry();
-                    }
-                    throw error;
+            fetch('https://openrouter.ai/api/v1/models', {
+                headers: {
+                    'Accept': 'application/json'
                 }
-            };
-            
-            fetchWithRetry()
-                .then(data => {
-                    console.log('Raw API Response:', data);
-                    
-                    // Defensive data mapping with extensive logging
-                    if (!data || !data.data || !Array.isArray(data.data)) {
-                        throw new Error('Invalid data structure from API');
-                    }
-                    
-                    this.models = data.data.map(model => {
-                        // Defensive checks for each model property
-                        if (!model.id || !model.name) {
-                            console.warn('Skipping invalid model:', model);
-                            return null;
-                        }
-                        
-                        return {
-                            id: model.id,
-                            provider: model.id.split('/')[0] || 'Unknown',
-                            name: model.name,
-                            modality: model.architecture?.modality || 'Unknown',
-                            pricing: {
-                                prompt: model.pricing?.prompt || '0',
-                                completion: model.pricing?.completion || '0',
-                                image: model.pricing?.image || '0',
-                                request: model.pricing?.request || '0'
-                            },
-                            contextLength: Math.round((model.context_length || 0) / 1000)
-                        };
-                    }).filter(Boolean); // Remove any null entries
-                    
-                    console.log('Processed Models:', this.models);
-                    
-                    // Validate models array
-                    if (this.models.length === 0) {
-                        throw new Error('No valid models found');
-                    }
-                    
-                    // Cache models in localStorage
-                    localStorage.setItem('openRouterModels', JSON.stringify(this.models));
-                    localStorage.setItem('openRouterModelsTimestamp', Date.now().toString());
-                    
-                    this.statusLight = 'green';
-                })
-                .catch(error => {
-                    console.error('Fetch error:', error);
-                    this.statusLight = 'red';
-                    
-                    // Enhanced error logging
-                    const errorDetails = {
-                        message: error.message,
-                        timestamp: new Date().toISOString(),
-                        networkInfo: navigator.connection ? {
-                            type: navigator.connection.type,
-                            effectiveType: navigator.connection.effectiveType,
-                            downlink: navigator.connection.downlink,
-                            rtt: navigator.connection.rtt
-                        } : null
-                    };
-                    
-                    // Optional: Send error to logging service
-                    this.logError(errorDetails);
-                    
-                    // User-friendly error notification
-                    this.showNotification(
-                        'Failed to load models. Using cached data or please check your connection.', 
-                        'error'
-                    );
-                });
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                if (!data?.data?.length) throw new Error('Invalid data structure from API');
+                
+                this.models = data.data.map(model => ({
+                    id: model.id,
+                    provider: model.id.split('/')[0] || 'Unknown',
+                    name: model.name,
+                    description: model.description || 'No description available',
+                    createdAt: model.created ? new Date(model.created * 1000).toLocaleDateString() : 'Unknown',
+                    modality: model.architecture?.modality || 'Unknown',
+                    tokenizer: model.architecture?.tokenizer || 'Unknown',
+                    limitations: model.limitations || ['No specific limitations listed'],
+                    pricing: {
+                        prompt: model.pricing?.prompt || '0',
+                        completion: model.pricing?.completion || '0',
+                        image: model.pricing?.image || '0',
+                        request: model.pricing?.request || '0'
+                    },
+                    contextLength: Math.round((model.context_length || 0) / 1000)
+                }));
+                
+                localStorage.setItem('openRouterModels', JSON.stringify(this.models));
+                localStorage.setItem('openRouterModelsTimestamp', Date.now().toString());
+                this.statusLight = 'green';
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                this.statusLight = 'red';
+            });
         },
-        
-        logError(errorDetails) {
-            // Placeholder for potential error logging service
-            console.error('Detailed Error:', JSON.stringify(errorDetails, null, 2));
+
+        get filteredModels() {
+            return this.models.filter(model => {
+                if (model.provider.toLowerCase() === 'openrouter') return false;
+
+                const matchesSearch = !this.searchQuery ||
+                    model.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                    model.provider.toLowerCase().includes(this.searchQuery.toLowerCase());
+                
+                const matchesProvider = this.selectedProviders.length === 0 || 
+                    this.selectedProviders.some(p => model.provider.toLowerCase().includes(p.toLowerCase()));
+                
+                const matchesModality = this.selectedModalities.length === 0 || 
+                    this.selectedModalities.some(m => model.modality.toLowerCase().includes(m.toLowerCase()));
+                
+                const matchesPricing = this.selectedPricingTypes.length === 0 || 
+                    (this.selectedPricingTypes.includes('free') && this.isFreeModel(model)) || 
+                    (this.selectedPricingTypes.includes('paid') && !this.isFreeModel(model));
+                
+                const matchesContextLength = !this.contextLengthFilter ||
+                    model.contextLength >= this.contextLengthFilter;
+                
+                return matchesSearch && matchesProvider && matchesModality && matchesPricing && matchesContextLength;
+            });
         },
-        
-        showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
-                type === 'error' ? 'bg-red-500 text-white' : 
-                type === 'success' ? 'bg-green-500 text-white' : 
-                'bg-blue-500 text-white'
-            }`;
-            notification.textContent = message;
-            
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.classList.add('animate-fade-out');
-                setTimeout(() => document.body.removeChild(notification), 500);
-            }, 3000);
-        },
-        
-get filteredModels() {
-    console.log('Applying filters:', {
-        search: this.searchQuery,
-        provider: this.providerFilterQuery,
-        modality: this.modalityFilterQuery,
-        pricing: this.pricingFilterQuery,
-        contextLength: this.contextLengthFilter
-    });
 
-    const filtered = this.models.filter(model => {
-        const matchesSearch = !this.searchQuery ||
-            (model.name && model.name.toLowerCase().includes(this.searchQuery.toLowerCase())) ||
-            (model.provider && model.provider.toLowerCase().includes(this.searchQuery.toLowerCase()));
-        
-        const matchesProvider = this.selectedProviders.length === 0 || 
-            this.selectedProviders.some(selectedProvider => 
-                model.provider.toLowerCase().includes(selectedProvider.toLowerCase())
-            );
-        
-        const matchesModality = this.selectedModalities.length === 0 || 
-            this.selectedModalities.some(modality => 
-                model.modality.toLowerCase().includes(modality.toLowerCase())
-            );
-        
-        const matchesPricing = this.selectedPricingTypes.length === 0 || 
-            (this.selectedPricingTypes.includes('free') && this.isFreeModel(model)) || 
-            (this.selectedPricingTypes.includes('paid') && !this.isFreeModel(model));
-        
-        const matchesContextLength = !this.contextLengthFilter ||
-            model.contextLength >= this.contextLengthFilter;
-        
-        const result = matchesSearch && matchesProvider && matchesModality && matchesPricing && matchesContextLength;
-        
-        if (result) {
-            console.log('Model matches filters:', model.name);
-        }
-        
-        return result;
-    });
-
-    console.log('Filtered models count:', filtered.length);
-    return filtered;
-},
-
-resetFilters() {
-    this.searchQuery = '';
-    this.selectedProviders = [];
-    this.selectedModalities = [];
-    this.selectedPricingTypes = [];
-    this.contextLengthFilter = null;
-},
-
-getProviderIcon(provider) {
-    const providerIcons = {
-        'meta-llama': 'fab fa-facebook',
-        'openai': 'fab fa-openai',
-        'anthropic': 'fas fa-brain',
-        'google': 'fab fa-google',
-        'mistral': 'fas fa-wind',
-        'cohere': 'fas fa-cubes'
-    };
-    
-    const lowercaseProvider = provider.toLowerCase();
-    const matchedIcon = Object.keys(providerIcons).find(key => 
-        lowercaseProvider.includes(key)
-    );
-    
-    return matchedIcon ? providerIcons[matchedIcon] : 'fas fa-robot';
-},
-
-        updateFilters() {
-            console.log('Filters updated, refreshing table...');
-            // Force reactivity by creating a new array
-            this.models = [...this.models];
-        },
-        
         get availableProviders() {
-            const providers = [...new Set(this.models.map(model => model.provider))].sort();
-            console.log('Available providers:', providers);
-            return providers;
+            return [...new Set(this.models.map(model => model.provider))].sort();
         },
-        
+
         get availableModalities() {
-            const modalities = [...new Set(this.models.flatMap(model => model.modality.split('+').map(m => m.split('->')[0])))].sort();
-            console.log('Available modalities:', modalities);
-            return modalities;
+            return [...new Set(this.models.flatMap(model => 
+                model.modality.split('+').map(m => m.split('->')[0])
+            ))].sort();
         },
-        
+
+        getProviderIcon(provider) {
+            const icons = {
+                'meta-llama': 'fab fa-facebook',
+                'openai': 'fab fa-openai',
+                'anthropic': 'fas fa-brain',
+                'google': 'fab fa-google',
+                'mistral': 'fas fa-wind',
+                'cohere': 'fas fa-cubes'
+            };
+            const key = Object.keys(icons).find(k => provider.toLowerCase().includes(k));
+            return key ? icons[key] : 'fas fa-robot';
+        },
+
         getModalityIcons(modality) {
             const icons = {
                 'text': 'fas fa-comment text-blue-500',
@@ -295,62 +212,56 @@ getProviderIcon(provider) {
                 'audio': 'fas fa-microphone text-purple-500',
                 'video': 'fas fa-video text-red-500'
             };
-            
             return modality.split('+').map(m => {
                 const type = m.split('->')[0];
                 return icons[type] || 'fas fa-question-circle text-gray-500';
             });
         },
-        
-formatPricing(pricing, modelName) {
-    const icons = {
-        prompt: 'fas fa-comment',
-        completion: 'fas fa-arrow-right',
-        image: 'fas fa-image',
-        request: 'fas fa-bolt'
-    };
-    
-    const isFreeModel = Object.values(pricing).every(val => val === '0' || val === 'free') || 
-                        modelName.toLowerCase().includes('free');
-    
-    if (isFreeModel) {
-        return `
-            <div class="flex items-center space-x-1">
-                <i class="fas fa-gift text-green-500"></i>
-                <span class="text-sm">Free</span>
-                <span class="free-icon">FREE</span>
-            </div>
-        `;
-    }
-            
-    return Object.entries(pricing)
-        .filter(([_, value]) => value !== '0' && value !== 'free')
-        .map(([type, value]) => {
-            const numericValue = parseFloat(value);
-            if (isNaN(numericValue)) return '';
-            
-            const costPerMillion = numericValue * 1000000;
-            const formattedValue = `$${costPerMillion.toFixed(2)}/M`;
-            
-            return `
-                <div class="flex items-center space-x-1">
-                    <i class="${icons[type]} text-sm"></i>
-                    <span class="text-sm">${formattedValue}</span>
-                </div>
-            `;
-        }).join('') || 'N/A';
-},
-        
-        copyModelId(id) {
-            navigator.clipboard.writeText(id)
-                .then(() => {
-                    this.showNotification('Model ID copied to clipboard!', 'success');
-                })
-                .catch(() => {
-                    this.showNotification('Failed to copy Model ID', 'error');
-                });
+
+        formatPricing(pricing, modelName) {
+            if (this.isFreeModel({ pricing, name: modelName })) {
+                return `
+                    <div class="flex items-center space-x-1">
+                        <i class="fas fa-gift text-green-500"></i>
+                        <span class="text-sm">Free</span>
+                        <span class="free-icon">FREE</span>
+                    </div>
+                `;
+            }
+
+            const icons = {
+                prompt: 'fas fa-comment',
+                completion: 'fas fa-arrow-right',
+                image: 'fas fa-image',
+                request: 'fas fa-bolt'
+            };
+
+            return Object.entries(pricing)
+                .filter(([_, value]) => value !== '0' && value !== 'free')
+                .map(([type, value]) => {
+                    const numericValue = parseFloat(value);
+                    if (isNaN(numericValue)) return '';
+
+                    const formattedValue = type === 'image'
+                        ? `$${(numericValue * 1000).toFixed(2)}/K`
+                        : `$${(numericValue * 1000000).toFixed(2)}/M`;
+
+                    return `
+                        <div class="flex items-center space-x-1">
+                            <i class="${icons[type]} text-sm"></i>
+                            <span class="text-sm">${formattedValue}</span>
+                        </div>
+                    `;
+                }).join('') || 'N/A';
         },
-        
+
+        isFreeModel(model) {
+            if (!model?.name || !model?.pricing) return false;
+            return model.name.toLowerCase().includes('free') ||
+                   model.name.toLowerCase().includes('open source') ||
+                   Object.values(model.pricing).every(val => val === '0' || val === 'free');
+        },
+
         sortBy(field) {
             if (this.sortField === field) {
                 this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
@@ -358,24 +269,37 @@ formatPricing(pricing, modelName) {
                 this.sortField = field;
                 this.sortDirection = 'asc';
             }
-            
+
+            const getValue = (model, field) => {
+                if (field === 'pricing') {
+                    if (this.isFreeModel(model)) return 0;
+                    return Object.values(model.pricing).reduce((sum, val) => {
+                        const num = parseFloat(val);
+                        return sum + (isNaN(num) ? 0 : num);
+                    }, 0);
+                }
+                return model[field];
+            };
+
             this.models.sort((a, b) => {
-                let valA = a[field];
-                let valB = b[field];
-                
+                let valA = getValue(a, field);
+                let valB = getValue(b, field);
+
                 if (typeof valA === 'string') valA = valA.toLowerCase();
                 if (typeof valB === 'string') valB = valB.toLowerCase();
-                
+
                 if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
                 if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
                 return 0;
             });
         },
-        
-isFreeModel(model) {
-    return model.name.toLowerCase().includes('free') || 
-           model.name.toLowerCase().includes('open source') ||
-           Object.values(model.pricing).every(val => val === '0' || val === 'free');
-}
-    }
+
+        resetFilters() {
+            this.searchQuery = '';
+            this.selectedProviders = [];
+            this.selectedModalities = [];
+            this.selectedPricingTypes = [];
+            this.contextLengthFilter = null;
+        }
+    };
 }

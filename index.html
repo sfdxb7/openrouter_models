@@ -11,7 +11,9 @@
     <script src="script.js"></script>
 </head>
 <body class="min-h-screen">
-    <div class="container mx-auto px-4 py-8" x-data="modelExplorer()">
+    <div class="container mx-auto px-4 py-8" 
+         x-data="modelExplorer()"
+         x-init="init()">
         <!-- Header Section -->
         <header class="mb-8">
             <h1 class="text-3xl font-bold mb-4 text-center bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500">
@@ -127,7 +129,11 @@
                 </thead>
                 <tbody>
                     <template x-for="model in filteredModels" :key="model.id">
-                        <tr class="border-t border-gray-800 hover:bg-gray-800">
+                        <tr class="border-t border-gray-800 hover:bg-gray-800 cursor-pointer"
+                            @mouseenter="model && (tooltipState = { model: model })"
+                            @mouseleave="hideTooltip()"
+                            @click.stop="model && showTooltip(model.id)"
+                            :class="{ 'bg-gray-700': tooltipState && tooltipState.model && tooltipState.model.id === model.id }">
                             <!-- Provider -->
                             <td class="px-6 py-4">
                                 <div class="flex items-center space-x-2">
@@ -139,7 +145,7 @@
                             <td class="px-6 py-4">
                                 <div class="flex items-center space-x-2">
                                     <span x-text="model.name"></span>
-                                    <button @click="copyModelId(model.id)" 
+                                    <button @click.stop="copyModelId(model.id)" 
                                             class="text-gray-400 hover:text-gray-200">
                                         <i class="fas fa-copy"></i>
                                     </button>
@@ -163,6 +169,58 @@
                     </template>
                 </tbody>
             </table>
+        </div>
+
+        <!-- Details Panel -->
+        <div class="details-panel fixed right-4 top-4 w-96 bg-gray-900 rounded-lg shadow-xl p-6"
+             x-show="tooltipState && tooltipState.model"
+             @click.away="hideTooltip()">
+            <template x-if="tooltipState && tooltipState.model">
+                <div class="space-y-4">
+                    <!-- Header -->
+                    <div class="border-b border-gray-700 pb-4 relative">
+                        <button @click="hideTooltip()" class="absolute top-0 right-0 text-gray-400 hover:text-white">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <h3 class="text-xl font-semibold pr-8" x-text="tooltipState.model.name"></h3>
+                        <div class="flex items-center space-x-2 mt-2 text-sm text-gray-400">
+                            <i class="fas fa-calendar"></i>
+                            <span x-text="tooltipState.model.createdAt"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Stats -->
+                    <div class="grid grid-cols-2 gap-4 py-4 border-b border-gray-700">
+                        <div>
+                            <div class="text-sm text-gray-400">Modality</div>
+                            <div class="font-medium" x-text="tooltipState.model.modality"></div>
+                        </div>
+                        <div>
+                            <div class="text-sm text-gray-400">Tokenizer</div>
+                            <div class="font-medium" x-text="tooltipState.model.tokenizer"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Description -->
+                    <div class="py-4 border-b border-gray-700">
+                        <h4 class="text-sm text-gray-400 mb-2">Description</h4>
+                        <p class="text-sm leading-relaxed" x-text="tooltipState.model.description"></p>
+                    </div>
+                    
+                    <!-- Limitations -->
+                    <div class="py-4">
+                        <h4 class="text-sm text-gray-400 mb-2">Limitations</h4>
+                        <ul class="text-sm space-y-2">
+                            <template x-for="limitation in tooltipState.model.limitations" :key="limitation">
+                                <li class="flex items-start">
+                                    <i class="fas fa-info-circle mt-1 mr-2 text-gray-500"></i>
+                                    <span x-text="limitation"></span>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </div>
+            </template>
         </div>
     </div>
 </body>
